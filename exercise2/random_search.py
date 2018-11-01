@@ -7,10 +7,11 @@ import hpbandster.core.nameserver as hpns
 from hpbandster.optimizers import RandomSearch
 
 import ConfigSpace as CS
+import ConfigSpace.hyperparameters as CSH
 from hpbandster.core.worker import Worker
 import argparse
 
-from cnn_mnist_solution import mnist
+from cnn_mnist import mnist, train_and_validate
 
 
 class MyWorker(Worker):
@@ -34,9 +35,14 @@ class MyWorker(Worker):
         lr = config["learning_rate"]
         num_filters = config["num_filters"]
         batch_size = config["batch_size"]
+        filter_size = config["filter_size"]
         epochs = budget
 
         # TODO: train and validate your convolutional neural networks here
+        curve, _ = train_and_validate(self.x_train, self.y_train, self.x_valid, self.y_valid, epochs, lr, num_filters, batch_size, filter_size=filter_size)
+        # validation error of the last epoch
+        validation_error = 1 - curve[-1][1]
+
 
         # TODO: We minimize so make sure you return the validation error here
         return ({
@@ -46,11 +52,18 @@ class MyWorker(Worker):
 
     @staticmethod
     def get_configspace():
-        config_space = CS.ConfigurationSpace()
+        cs = CS.ConfigurationSpace()
 
-        # TODO: Implement configuration space here. See https://github.com/automl/HpBandSter/blob/master/hpbandster/examples/example_5_keras_worker.py  for an example
+        lr = CSH.UniformFloatHyperparameter('learning_rate', lower=1e-4, upper=1e-1, default_value=1e-2, log=True)
+        batch_size = CSH.UniformIntegerHyperparameter('batch_size', lower=16, upper=128, default_value=64, log=True)
+        num_filters = CSH.UniformIntegerHyperparameter('num_filters', lower=8, upper=64, default_value=10, log=True)
 
-        return config_space
+        filter_size = CSH.CategoricalHyperparameter('filter_size', [3, 5])
+
+
+        cs.add_hyperparameters([lr, batch_size, num_filters, filter_size])
+
+        return cs
 
 
 parser = argparse.ArgumentParser(description='Example 1 - sequential and local execution.')
@@ -111,4 +124,15 @@ hpvis.losses_over_time(all_runs)
 import matplotlib.pyplot as plt
 plt.savefig("random_search.png")
 
+config = id2config[incumbent]['config']
+lr = config["learning_rate"]
+num_filters = config["num_filters"]
+batch_size = config["batch_size"]
+filter_size = config["filter_size"]
+
+x_train, y_train, x_valid, y_valid, x_test, y_test = mnist("./")
 # TODO: retrain the best configuration (called incumbent) and compute the test error
+_, model = train_and_validate(x_train, y_train, x_valid, y_valid, 12, lr, num_filters, batch_size, filter_size=filter_size)
+_, test_accuracy = model.evaluate(x_test, y_test)
+print("Test error of best configuration is {}".format(1 - test_accuracy))
+
