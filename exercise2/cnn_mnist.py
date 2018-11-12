@@ -77,58 +77,33 @@ def train_and_validate(x_train, y_train, x_valid, y_valid, num_epochs, lr, num_f
 
     num_batches = x_train.shape[0] // batch_size
 
+    learning_curve = []
     y_valid = np.expand_dims(y_valid, 1)
     for i in range(num_epochs):
+        print("Starting Epoch {}".format(i))
         for b in range(num_batches):
             x_batch = x_train[b * batch_size:(b+1) * batch_size, :, :]
             y_batch = y_train[b * batch_size:(b+1) * batch_size]
             y_batch = np.expand_dims(y_batch, 1)
             model_tf.train_on_batch(x_batch, y_batch)
 
-        val = model_tf.test_on_batch(x_valid, y_valid)
-        print("validation after epoch {}: {}".format(i, val))
+        loss, accuracy = model_tf.test_on_batch(x_valid, y_valid)
+        learning_curve.append((loss, accuracy))
+        print("Validation loss {:.4f}, accuracy: {:4f}".format(loss, accuracy))
+        print("Finished Epoch {}".format(i))
+        print()
 
-    return model_tf
+    return learning_curve, model_tf
 
-
-    model = tf.keras.models.Sequential([
-        tf.keras.layers.Conv2D(num_filters, (filter_size, filter_size), (1, 1), padding="same"),
-        tf.keras.layers.Activation("relu"),
-
-        tf.keras.layers.Conv2D(num_filters, (filter_size, filter_size), (1, 1), padding="same"),
-        tf.keras.layers.Activation("relu"),
-        tf.keras.layers.MaxPooling2D((2, 2), 2),
-        tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(128, activation="relu"),
-        tf.keras.layers.Dense(10, activation="softmax")
-    ])
-
-    sgd = tf.keras.optimizers.SGD(lr=lr)
-    learning_curve = []
-
-    # create a callback that calculates, prints and stores the validation loss after each epoch
-    def validate(batch, logs ):
-        learning_curve.append(model.evaluate(x_valid, y_valid, verbose=0))
-        l = learning_curve[-1][0]
-        a = learning_curve[-1][1]
-        print("\nValidation loss: {:.4f}, Validation accuracy: {:.4f}\n".format(l, a))
-
-    validation_callback = tf.keras.callbacks.LambdaCallback(on_epoch_end=validate)
-
-    # the categorical crossentropy is for one_hot encoded vectors with more than two classes
-    model.compile(optimizer=sgd, loss="categorical_crossentropy", metrics=["accuracy"])
-    model.fit(x_train, y_train, batch_size=batch_size, epochs=num_epochs, callbacks=[validation_callback])
-
-    # the lambda callback has stored validation losses and accuracies
-    return learning_curve, model  # TODO: Return the validation error after each epoch (i.e learning curve) and your model
 
 
 def test(x_test, y_test, model):
+    y_test = np.expand_dims(y_test, 1)
     # TODO: test your network here by evaluating it on the test data
     print("Evaluating model on test set")
-    res = model.evaluate(x_valid, y_valid)
-    test_error = 1.0 - res[1]
-    print("Test loss: {}\n Test error {}".format(res[0], res[1]))
+    loss, accuracy = model.test_on_batch(x_test, y_test)
+    test_error = 1.0 - accuracy
+    print("Test loss: {}\n Test error {}".format(loss, test_error))
     return test_error
 
 """

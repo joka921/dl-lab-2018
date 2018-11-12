@@ -84,10 +84,12 @@ class cnn_mnist_model() :
 
     def __del__(self):
         if (self.sess is not None):
+            print("Shutting down Tensorflow session in model destructor")
             self.sess.close()
 
     def train_on_batch(self, x_batch, y_batch):
         return self.sess.run(self.train_op, feed_dict={self.x: x_batch, self.y: y_batch})
 
     def test_on_batch(self, x_batch, y_batch):
-        return self.sess.run((self.loss, self.accuracy), feed_dict={self.x: x_batch, self.y: y_batch})
+        loss, accuracy = self.sess.run((self.loss, self.accuracy), feed_dict={self.x: x_batch, self.y: y_batch})
+        return float(loss), float(accuracy)
