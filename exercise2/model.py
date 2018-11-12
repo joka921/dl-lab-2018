@@ -10,11 +10,22 @@ class cnn_mnist_model() :
         self.x = tf.placeholder(tf.float32, shape=[None, 28, 28, 1])
         self.y = tf.placeholder(tf.int64, shape=[None, 1])
 
+        self.batch_size = tf.placeholder(tf.int64)
+        self.dataset_size = tf.placeholder(tf.int64)
+        dataset_train = tf.data.Dataset.from_tensor_slices((self.x, self.y)).repeat().shuffle(buffer_size=self.dataset_size).batch(self.batch_size)
+        dataset_test = tf.data.Dataset.from_tensor_slices((self.x, self.y)).batch(self.dataset_size)
+        iter = tf.data.Iterator.from_structure(dataset_train.output_types,
+                                               dataset_train.output_shapes)
+
+        features, labels = iter.get_next()
+        self.train_init_op = iter.make_initializer(dataset_train)
+        self.test_init_op = iter.make_initializer(dataset_test)
+
         # Convolutional Layer #1
         # Input Tensor Shape: [batch_size, 28, 28, 1]
         # Output Tensor Shape: [batch_size, 28, 28, num_filters]
         conv1 = tf.layers.conv2d(
-            inputs=self.x,
+            inputs=features,
             filters=num_filters,
             kernel_size=[filter_size, filter_size],
             padding="same",
@@ -61,7 +72,7 @@ class cnn_mnist_model() :
         }
 
         # Calculate Loss (for both TRAIN and EVAL modes)
-        self.loss = tf.losses.sparse_softmax_cross_entropy(labels=self.y, logits=logits)
+        self.loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
 
         # Configure the Training Op (for TRAIN mode)
         optimizer = tf.train.GradientDescentOptimizer(learning_rate=lr)
@@ -71,7 +82,7 @@ class cnn_mnist_model() :
 
         # Add evaluation metrics (for EVAL mode)
 
-        self.accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.squeeze(self.y), self.predictions["classes"]), tf.float32))
+        self.accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.squeeze(labels), self.predictions["classes"]), tf.float32))
 
         self.init_op = tf.global_variables_initializer()
         self.local_init_op = tf.local_variables_initializer()
@@ -87,9 +98,25 @@ class cnn_mnist_model() :
             print("Shutting down Tensorflow session in model destructor")
             self.sess.close()
 
-    def train_on_batch(self, x_batch, y_batch):
-        return self.sess.run(self.train_op, feed_dict={self.x: x_batch, self.y: y_batch})
+    def train(self, x_train, y_train, x_valid, y_valid, batch_size, num_epochs):
+
+        learning_curve = []
+        for i in range(num_epochs):
+            print("Starting Epoch {}".format(i))
+            self.sess.run(self.train_init_op, feed_dict={self.x: x_train, self.y: y_train, self.batch_size: batch_size, self.dataset_size: x_train.shape[0]})
+            n_batches = x_train.shape[0] // batch_size
+            for _ in range(n_batches):
+                self.sess.run(self.train_op)
+
+            loss, accuracy = self.test_on_batch(x_valid, y_valid)
+            learning_curve.append((loss, accuracy))
+            print("Validation loss {:.4f}, accuracy: {:4f}".format(loss, accuracy))
+            print("Finished Epoch {}".format(i))
+            print()
+
+        return learning_curve
+
 
     def test_on_batch(self, x_batch, y_batch):
-        loss, accuracy = self.sess.run((self.loss, self.accuracy), feed_dict={self.x: x_batch, self.y: y_batch})
-        return float(loss), float(accuracy)
+        self.sess.run(self.test_init_op, feed_dict={self.x: x_batch, self.y: y_batch, self.batch_size: x_batch.shape[0], self.dataset_size: x_batch.shape[0]})
+        return self.sess.run((self.loss, self.accuracy))

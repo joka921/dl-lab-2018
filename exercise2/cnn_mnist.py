@@ -77,22 +77,9 @@ def train_and_validate(x_train, y_train, x_valid, y_valid, num_epochs, lr, num_f
 
     num_batches = x_train.shape[0] // batch_size
 
-    learning_curve = []
-    y_valid = np.expand_dims(y_valid, 1)
-    for i in range(num_epochs):
-        print("Starting Epoch {}".format(i))
-        for b in range(num_batches):
-            x_batch = x_train[b * batch_size:(b+1) * batch_size, :, :]
-            y_batch = y_train[b * batch_size:(b+1) * batch_size]
-            y_batch = np.expand_dims(y_batch, 1)
-            model_tf.train_on_batch(x_batch, y_batch)
-
-        loss, accuracy = model_tf.test_on_batch(x_valid, y_valid)
-        learning_curve.append((loss, accuracy))
-        print("Validation loss {:.4f}, accuracy: {:4f}".format(loss, accuracy))
-        print("Finished Epoch {}".format(i))
-        print()
-
+    y_train = np.expand_dims(y_train, axis=1)
+    y_valid = np.expand_dims(y_valid, axis=1)
+    learning_curve = model_tf.train(x_train, y_train, x_valid, y_valid, batch_size=batch_size, num_epochs=num_epochs)
     return learning_curve, model_tf
 
 
@@ -115,11 +102,15 @@ def exercise_2(x_train, y_train, x_valid, y_valid,):
     curves = []
     for lr in learning_rates:
         # all parameters except the learning rate are constant default values
+        #curve, _ = train_and_validate(x_train, y_train, x_valid, y_valid, 12, lr, 16, 128)
         curve, _ = train_and_validate(x_train, y_train, x_valid, y_valid, 12, lr, 16, 128)
         curves.append(curve)
 
     #do the plotting
     import matplotlib.pyplot as plt
+    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.4)
+    plt.subplot(2, 1, 1)
+    plt.title('Validation Loss and Error on MNIST for different learning Rates')
     x = [i for i in range(len(curves[0]))]
     colors = ['g', 'r', 'b', 'c']
     for color, curve, lr in zip(colors, curves, learning_rates):
@@ -128,7 +119,16 @@ def exercise_2(x_train, y_train, x_valid, y_valid,):
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend()
-    plt.title('Validation Loss on MNIST for different learning Rates')
+
+    plt.subplot(2, 1, 2)
+    x = [i for i in range(len(curves[0]))]
+    colors = ['g', 'r', 'b', 'c']
+    for color, curve, lr in zip(colors, curves, learning_rates):
+        errors = [1 - x[1] for x in curve]
+        plt.plot(x, errors, '{}--'.format(color), label='lr={}'.format(lr))
+    plt.ylabel('error')
+    plt.xlabel('epoch')
+    plt.legend()
     plt.savefig('Ex2.eps')
     plt.show()
 
@@ -149,15 +149,27 @@ def exercise_3(x_train, y_train, x_valid, y_valid,):
 
     # plot results
     import matplotlib.pyplot as plt
+    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.4)
+    plt.subplot(2, 1, 1)
+    plt.title('Validation Loss and Error on MNIST for different filter sizes')
     x = [i for i in range(len(curves[0]))]
     colors = ['g', 'r', 'b', 'c']
-    for color, curve, filter_size in zip(colors, curves, filter_sizes):
+    for color, curve, lr in zip(colors, curves, filter_sizes):
         losses = [x[0] for x in curve]
-        plt.plot(x, losses, '{}--'.format(color), label='filter-size={}'.format(filter_size))
+        plt.plot(x, losses, '{}--'.format(color), label='filter-size={}'.format(lr))
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend()
-    plt.title('Validation Loss on MNIST for different filter sizes')
+
+    plt.subplot(2, 1, 2)
+    x = [i for i in range(len(curves[0]))]
+    colors = ['g', 'r', 'b', 'c']
+    for color, curve, lr in zip(colors, curves, filter_sizes):
+        errors = [1 - x[1] for x in curve]
+        plt.plot(x, errors, '{}--'.format(color), label='filter-size={}'.format(lr))
+    plt.ylabel('error')
+    plt.xlabel('epoch')
+    plt.legend()
     plt.savefig('Ex3.eps')
     plt.show()
 

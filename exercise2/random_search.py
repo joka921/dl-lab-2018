@@ -11,7 +11,7 @@ import ConfigSpace.hyperparameters as CSH
 from hpbandster.core.worker import Worker
 import argparse
 
-from cnn_mnist import mnist, train_and_validate
+from cnn_mnist import mnist, train_and_validate, test
 
 
 class MyWorker(Worker):
@@ -68,8 +68,8 @@ class MyWorker(Worker):
 
 parser = argparse.ArgumentParser(description='Example 1 - sequential and local execution.')
 parser.add_argument('--budget', type=float,
-                    help='Maximum budget used during the optimization, i.e the number of epochs.', default=12)
-parser.add_argument('--n_iterations', type=int, help='Number of iterations performed by the optimizer', default=20)
+                    help='Maximum budget used during the optimization, i.e the number of epochs.', default=6)
+parser.add_argument('--n_iterations', type=int, help='Number of iterations performed by the optimizer', default=50)
 args = parser.parse_args()
 
 # Step 1: Start a nameserver
@@ -133,6 +133,6 @@ filter_size = config["filter_size"]
 x_train, y_train, x_valid, y_valid, x_test, y_test = mnist("./")
 # TODO: retrain the best configuration (called incumbent) and compute the test error
 _, model = train_and_validate(x_train, y_train, x_valid, y_valid, 12, lr, num_filters, batch_size, filter_size=filter_size)
-_, test_accuracy = model.evaluate(x_test, y_test)
-print("Test error of best configuration is {}".format(1 - test_accuracy))
+test_error = test(x_test, y_test, model)
+print("Test error of best configuration is {}".format(test_error))
 
