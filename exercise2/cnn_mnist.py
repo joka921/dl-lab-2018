@@ -173,6 +173,34 @@ def exercise_3(x_train, y_train, x_valid, y_valid,):
     plt.savefig('Ex3.eps')
     plt.show()
 
+def plot_performance(learning_curve, title, save):
+    # choose a learning rate that converges somewhat fast but is not too noisy
+    # according to our experiences so far
+
+    losses = [x[0] for x in learning_curve]
+    errors = [1 - x[1] for x in learning_curve]
+    import matplotlib.pyplot as plt
+    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.4)
+    plt.subplot(2, 1, 1)
+    plt.title(title)
+    x = [i for i in range(len(losses))]
+    color = 'g'
+    plt.plot(x, losses, '{}--'.format(color), label=None)
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend()
+
+    plt.subplot(2, 1, 2)
+    x = [i for i in range(len(errors))]
+    color = 'g'
+    plt.plot(x, errors, '{}--'.format(color), label=None)
+    plt.ylabel('error')
+    plt.xlabel('epoch')
+    plt.legend()
+    plt.savefig(save)
+    plt.show()
+
+
 
 
 if __name__ == "__main__":

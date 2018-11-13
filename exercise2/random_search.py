@@ -11,7 +11,7 @@ import ConfigSpace.hyperparameters as CSH
 from hpbandster.core.worker import Worker
 import argparse
 
-from cnn_mnist import mnist, train_and_validate, test
+from cnn_mnist import mnist, train_and_validate, test, plot_performance
 
 
 class MyWorker(Worker):
@@ -132,7 +132,8 @@ filter_size = config["filter_size"]
 
 x_train, y_train, x_valid, y_valid, x_test, y_test = mnist("./")
 # TODO: retrain the best configuration (called incumbent) and compute the test error
-_, model = train_and_validate(x_train, y_train, x_valid, y_valid, 12, lr, num_filters, batch_size, filter_size=filter_size)
+learning_curve, model = train_and_validate(x_train, y_train, x_valid, y_valid, 12, lr, num_filters, batch_size, filter_size=filter_size)
 test_error = test(x_test, y_test, model)
 print("Test error of best configuration is {}".format(test_error))
+plot_performance(learning_curve, "Validation Loss and Error on Best Model", "randomPerformance.eps")
 
