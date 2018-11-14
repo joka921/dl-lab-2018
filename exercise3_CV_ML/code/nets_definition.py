@@ -26,6 +26,7 @@ def FCN_Seg(self, is_training=True):
 
     with tf.variable_scope('First_conv'):
         conv1 = tc.layers.conv2d(self.tgt_image, 32, 3, 1, normalizer_fn=self.normalizer, normalizer_params=self.bn_params)
+        print("Input shape")
 
         print("Conv1 shape")
         print(conv1.get_shape())
@@ -90,6 +91,14 @@ def FCN_Seg(self, is_training=True):
         # output feature name should match the next convolution layer, for instance
         # current_up5
 
+        current_up5 = tf.layers.conv2d_transpose(x, 120, 16, 16)
+        print("upstreamed shape")
+        print(current_up5)
+        # crop to exactly match input dimensions concerning width and height
+        current_up5 = crop(current_up5, self.tgt_image)
+        print("upstreamed shape after cropping")
+        print(current_up5)
+
         End_maps_decoder1 = slim.conv2d(current_up5, self.N_classes, [1, 1], scope='Final_decoder') #(batchsize, width, height, N_classes)
         
         Reshaped_map = tf.reshape(End_maps_decoder1, (-1, self.N_classes))
@@ -105,10 +114,24 @@ def FCN_Seg(self, is_training=True):
         # TODO (2.1) - implement the refinement block which upsample the data 2x like in configuration 1 
         # but that also fuse the upsampled features with the corresponding skip connection (DB4_skip_connection)
         # through concatenation. After that use a convolution with kernel 3x3 to produce 256 output feature maps 
-        
-        
-        # TODO (2.2) - incorporate a upsample function which takes the features from TODO (2.1) 
-        # and produces 120 output feature maps, which are 8x bigger in resolution than 
+
+        x = TransitionUp_elu(x, 120, 2, name="upForSkip4")
+        print("upstreamed shape")
+        print(x)
+
+        #concatenate
+        x = tf.concat([x, DB4_skip_connection], -1)
+        print("concatenated shape")
+        print(x)
+        x = tf.layers.conv2d(x, 256,3, padding="same")
+
+        # TODO (2.2) - incorporate a upsample function which takes the features from TODO (2.1)
+
+        x = TransitionUp_elu(x, 160, 8, name="upFinal")
+        current_up3 = crop(x, self.tgt_image)
+        print("8 upsampled shape")
+        print(current_up3)
+        # and produces 120 output feature maps, which are 8x bigger in resolution than
         # TODO (2.1). Remember if dim(upsampled_features) > dim(imput image) you must crop
         # upsampled_features to the same resolution as imput image
         # output feature name should match the next convolution layer, for instance
@@ -129,18 +152,44 @@ def FCN_Seg(self, is_training=True):
 
         # TODO (3.1) - implement the refinement block which upsample the data 2x like in configuration 1 
         # but that also fuse the upsampled features with the corresponding skip connection (DB4_skip_connection)
-        # through concatenation. After that use a convolution with kernel 3x3 to produce 256 output feature maps 
-       
+        # through concatenation. After that use a convolution with kernel 3x3 to produce 256 output feature maps
+
+        x = TransitionUp_elu(x, 120, 2, name="upForSkip4")
+        print("upstreamed shape")
+        print(x)
+
+        #concatenate
+        x = tf.concat([x, DB4_skip_connection], -1)
+        print("concatenated shape")
+        print(x)
+        x = tf.layers.conv2d(x, 256,3, padding="same")
+
         # TODO (3.2) - Repeat TODO(3.1) now producing 160 output feature maps and fusing the upsampled features 
         # with the corresponding skip connection (DB3_skip_connection) through concatenation.
+
+        x = TransitionUp_elu(x, 160, 2, name="upForSkip3")
+        print("upstreamed shape")
+        print(x)
+
+        #concatenate
+        x = crop(x, DB3_skip_connection)
+        x = tf.concat([x, DB3_skip_connection], -1)
+        print("concatenated shape")
+        print(x)
+        x = tf.layers.conv2d(x, 256,3, padding="same")
 
         # TODO (3.3) - incorporate a upsample function which takes the features from TODO (3.2)  
         # and produces 120 output feature maps which are 4x bigger in resolution than 
         # TODO (3.2). Remember if dim(upsampled_features) > dim(imput image) you must crop
         # upsampled_features to the same resolution as imput image
         # output feature name should match the next convolution layer, for instance
-        # current_up4  
-              
+        # current_up4
+
+        x = TransitionUp_elu(x, 120, 4, name="upFinal")
+        current_up4 = crop(x, self.tgt_image)
+        print("4 upsampled shape")
+        print(current_up4)
+
 
         End_maps_decoder1 = slim.conv2d(current_up4, self.N_classes, [1, 1], scope='Final_decoder') #(batchsize, width, height, N_classes)
         
@@ -156,8 +205,38 @@ def FCN_Seg(self, is_training=True):
         ######################################################################################
         ######################################### DECODER Full #############################################
 
-        current_up2 = TransitionUp_elu(x, 96, 2, name='Upconv2')
-        
+        x = TransitionUp_elu(x, 96, 2, name='Upconv2')
+
+        print("upstreamed shape")
+        print(x)
+
+        #concatenate
+        x = tf.concat([x, DB4_skip_connection], -1)
+        print("concatenated shape")
+        print(x)
+        x = tf.layers.conv2d(x, 256,3, padding="same")
+
+
+        x = TransitionUp_elu(x, 160, 2, name='upconv160')
+        print("upstreamed shape")
+        print(x)
+
+        #concatenate
+        x = crop(x, DB3_skip_connection)
+        x = tf.concat([x, DB3_skip_connection], -1)
+        print("concatenated shape")
+        print(x)
+        x = tf.layers.conv2d(x, 256,3, padding="same")
+
+
+        x = TransitionUp_elu(x, 96, 2, name='UpsampleSkip2')
+        x = tf.concat([x, DB2_skip_connection], -1)
+
+        x = TransitionUp_elu(x, 120, 2, name='UpsampleFinal')
+        print("4 upsampled shape")
+        print(x)
+        current_up5 = crop(x, self.tgt_image)
+
         # TODO (4.1) - implement the refinement block which upsample the data 2x like in configuration 1 
         # but that also fuse the upsampled features with the corresponding skip connection (DB4_skip_connection)
         # through concatenation. After that use a convolution with kernel 3x3 to produce 256 output feature maps 
