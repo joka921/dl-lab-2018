@@ -36,6 +36,10 @@ class MyWorker(Worker):
         num_filters = config["num_filters"]
         batch_size = config["batch_size"]
         filter_size = config["filter_size"]
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
         epochs = budget
 
         # TODO: train and validate your convolutional neural networks here
