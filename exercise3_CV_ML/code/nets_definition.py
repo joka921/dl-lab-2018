@@ -205,6 +205,7 @@ def FCN_Seg(self, is_training=True):
         ######################################################################################
         ######################################### DECODER Full #############################################
 
+<<<<<<< HEAD
         x = TransitionUp_elu(x, 96, 2, name='Upconv2')
 
         print("upstreamed shape")
@@ -237,6 +238,10 @@ def FCN_Seg(self, is_training=True):
         print(x)
         current_up5 = crop(x, self.tgt_image)
 
+=======
+       
+        
+>>>>>>> upstream/master
         # TODO (4.1) - implement the refinement block which upsample the data 2x like in configuration 1 
         # but that also fuse the upsampled features with the corresponding skip connection (DB4_skip_connection)
         # through concatenation. After that use a convolution with kernel 3x3 to produce 256 output feature maps 

@@ -1,0 +1,48 @@
+\documentclass{scrartcl}
+
+\usepackage[utf8]{inputenc}
+
+
+% zus�tzliche mathematische Symbole, AMS=American Mathematical Society 
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{bbm}
+\usepackage{color}
+\usepackage{listings}
+\usepackage{pdfpages}
+\usepackage{csquotes}
+
+% f�rs Einbinden von Graphiken
+\usepackage{graphicx}
+
+% f�r Namen etc. in Kopf- oder Fu�zeile
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usetikzlibrary{arrows, automata}
+
+% erlaubt benutzerdefinierte Kopfzeilen 
+\pagestyle{fancy}
+
+% Definition der Kopfzeile
+\lhead{
+\begin{tabular}{lll}
+Johannes Kalmbach &  &   \\
+\end{tabular}
+}
+\chead{}
+\rhead{\today{}}
+\lfoot{}
+\cfoot{Seite \thepage}
+\rfoot{} 
+
+\begin{document}
+
+\section*{Deep Learning Lab, Report for Submission 4}
+The report for this submission will be rather short since there is not that many interesting stuff to tell about. Since I am also attending two other courses (Foundations of Deep Learning and ML4AADl) where we already talked about Hyperband and BOHB the sheet did not cause many problems. I was confused that there was no parameter "eta" for the succesive halving function, I introduced it to make the interface consistent with the tutorial code that was linked.
+I again made the observation that the incumbent configuration of BOHB runs is almost always randomly sampled. But maybe that is due to the toy datasets for homeworks being too "easy" in their hyperparameter surface to benefit from the estimation part of the algorithm.
+
+
+\end{document}
+
+
